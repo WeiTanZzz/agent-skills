@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Skill Frontmatter Schema",
+  "type": "object",
+  "required": ["name", "version", "type", "description"],
+  "properties": {
+    "name": { "type": "string" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "type": { "type": "string", "enum": ["prompt", "script", "hybrid"] },
+    "description": { "type": "string" },
+    "trigger": { "type": "string" },
+    "scripts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "requires": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "author": { "type": "string" }
+  }
+}
