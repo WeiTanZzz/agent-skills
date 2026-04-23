@@ -30,3 +30,18 @@ Stress-test a plan or design by being interviewed relentlessly until every branc
 - Questions are asked one at a time to avoid overwhelming the user.
 - Each question comes with Claude's recommended answer — it's a collaborative interrogation, not just a quiz.
 - If a question can be resolved by reading the codebase, Claude does so rather than asking — keeps the conversation focused on genuinely open decisions.
+
+---
+
+## [techarch](./techarch/SKILL.md)
+
+**Type:** prompt  
+**References:** `references/greenfield-template.md`, `references/review-checklist.md`
+
+System design, architecture review, tech selection, and trade-off analysis.
+
+**Insights:**
+- Scales output to the question: focused trade-off for scoped questions, full architecture doc for greenfield, checklist evaluation for existing systems — avoids unnecessary verbosity.
+- Simplicity-first principle: actively discourages microservices, event buses, and caching layers unless scale/reliability clearly justifies them.
+- Never proceeds with hidden assumptions — always states them explicitly before the design.
+- Includes an evolution path section (MVP → Growth → Scale) triggered by observable signals, not calendar time.
