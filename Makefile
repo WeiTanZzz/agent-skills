@@ -18,8 +18,8 @@ validate:
 	@echo "Validating skill frontmatter..."
 	@for dir in $(SKILLS_DIR)/*/; do \
 		skill=$$(basename $$dir); \
-		if [ ! -f "$$dir/skill.md" ]; then \
-			echo "  MISSING skill.md: $$skill"; \
+		if [ ! -f "$$dir/SKILL.md" ]; then \
+			echo "  MISSING SKILL.md: $$skill"; \
 		else \
 			echo "  OK: $$skill"; \
 		fi \

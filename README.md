@@ -7,11 +7,11 @@ A shared repository of AI skills for Claude Code and other AI agents.
 ```
 skills/
   <skill-name>/
-    skill.md        # Skill definition with frontmatter
+    SKILL.md        # Skill definition with frontmatter
     README.md       # Usage and examples
     scripts/        # Optional scripts (shell, python, etc.)
 tools/              # Reusable utility scripts
-schema.json         # skill.md frontmatter specification
+schema.json         # SKILL.md frontmatter specification
 Makefile            # install / list / validate
 ```
 
