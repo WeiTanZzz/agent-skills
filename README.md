@@ -27,6 +27,10 @@ Makefile            # install / list / validate
 make install SKILL=<skill-name>
 ```
 
+## Skills Catalog
+
+Browse all available skills with usage notes and design insights: [SKILLS.md](./SKILLS.md)
+
 ## Contributing
 
 1. Fork this repo
