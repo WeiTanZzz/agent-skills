@@ -16,3 +16,17 @@ Convert videos, image sequences, or existing GIFs into optimized animated GIFs.
 - Built-in file size reduction strategy (lower fps → shrink dimensions → reduce palette → stronger dithering) gives a clear decision tree instead of trial and error.
 - Handles three distinct input types (video, image sequence, existing GIF) with branching logic — ask for clarification if the input type is ambiguous.
 - Always reports output size and proactively suggests compression when the result exceeds 5 MB.
+
+---
+
+## [grill-me](./grill-me/SKILL.md)
+
+**Type:** prompt  
+**Source:** [mattpocock/skills](https://github.com/mattpocock/skills/blob/main/grill-me/SKILL.md)
+
+Stress-test a plan or design by being interviewed relentlessly until every branch of the decision tree is resolved.
+
+**Insights:**
+- Questions are asked one at a time to avoid overwhelming the user.
+- Each question comes with Claude's recommended answer — it's a collaborative interrogation, not just a quiz.
+- If a question can be resolved by reading the codebase, Claude does so rather than asking — keeps the conversation focused on genuinely open decisions.
