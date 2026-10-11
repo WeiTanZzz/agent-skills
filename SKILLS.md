@@ -45,3 +45,20 @@ System design, architecture review, tech selection, and trade-off analysis.
 - Simplicity-first principle: actively discourages microservices, event buses, and caching layers unless scale/reliability clearly justifies them.
 - Never proceeds with hidden assumptions — always states them explicitly before the design.
 - Includes an evolution path section (MVP → Growth → Scale) triggered by observable signals, not calendar time.
+
+---
+
+## [case-study](./case-study/SKILL.md)
+
+**Type:** hybrid  
+**Requires:** `bun`  
+**References:** `references/analysis.md`, `references/deck-spec.md`, `references/example.deck.md`
+
+Analyse a consulting-style technical case study pack, then — only when asked — turn the presenter's own decisions into a consistent HTML deck.
+
+**Insights:**
+- The human decides: analysis lays out asks, facts, tensions, key numbers and the decisions to make with options and trade-offs, but never recommends or ranks; the deck is built only from decisions the user has stated, and only on an explicit request.
+- The client's own questions are treated as the marking scheme: the renderer warns if any ask is not answered on a slide.
+- Answer first and concise: slide 1 is the problem and the answer; every title is a full-sentence conclusion, and the renderer warns on long titles and wordy slides.
+- Style consistency comes from code, not prompting: `scripts/render.ts` owns all layout, colours and diagram drawing (auto-laid-out lanes, charts, timelines), so every deck looks the same.
+- Output is a Deck HTML v1 file (no scripts; navigation comes from the hosting runtime). Speaker notes, Q&A prep and an ask-coverage slide are `data-private`, so viewers never receive them.
