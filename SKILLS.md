@@ -62,3 +62,19 @@ Analyse a consulting-style technical case study pack, then — only when asked �
 - Answer first and concise: slide 1 is the problem and the answer; every title is a full-sentence conclusion, and the renderer warns on long titles and wordy slides.
 - Style consistency comes from code, not prompting: `scripts/render.ts` owns all layout, colours and diagram drawing (auto-laid-out lanes, charts, timelines), so every deck looks the same.
 - Output is a Deck HTML v1 file (no scripts; navigation comes from the hosting runtime). Speaker notes, Q&A prep and an ask-coverage slide are `data-private`, so viewers never receive them.
+
+---
+
+## [deck-html](./deck-html/SKILL.md)
+
+**Type:** hybrid  
+**Requires:** `bun`  
+**References:** `references/spec.md`
+
+Create, convert or fix a Deck HTML v1 file: one self-contained HTML deck served live at deck.txz.cool, where viewers follow the presenter's slide, cursor and selection.
+
+**Insights:**
+- The spec is the source of truth and ships with the skill (`references/spec.md`), alongside a single-file build of the platform's own validator (`scripts/validate.js`), so a deck that passes here passes the upload check. Both are generated from the platform, never hand-edited.
+- Conversions replace scripts with declarative features (`data-go`, `data-toggle`, `data-fx`, `data-private`) and say what had to become static instead of silently dropping it.
+- The validator can't see layout, so `scripts/preview.ts` renders every slide as a dashed 1280×720 frame to catch overflow, with toggles open or private content removed.
+- `scripts/inline-assets.ts` turns local images and fonts into `data:` URIs and checks the 5 MB limit; remote assets are only downloaded with the user's OK.
