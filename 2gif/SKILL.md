@@ -1,5 +1,7 @@
 ---
 name: 2gif
+version: 1.0.0
+type: hybrid
 description: >
   Convert videos, image sequences, or existing GIFs into optimized animated GIFs with
   fine-grained quality control. Use this skill whenever the user wants to: convert any

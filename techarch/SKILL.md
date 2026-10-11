@@ -1,5 +1,7 @@
 ---
 name: techarch
+version: 1.0.0
+type: prompt
 description: >
   Use for system design, architecture review, tech selection, trade-off analysis,
   data flow design, scalability planning, and security design.
