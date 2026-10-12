@@ -26,17 +26,24 @@ Written in phase 1, updated when the user states decisions. Plain markdown; keep
 
 ## Maths
 - M1: <formula> = <result> → <implication> [source]
+- M2 (value): <what the change saves or avoids> vs <what it costs> → <implication> [source / assumption]
 
 ## Decisions to make
-### D1: <question>
-- **Option A — <name>:** <what it means>
+### Design
+#### D1 [Identity and access]: <question>
+- **Option A — <concrete mechanism or service>:** <what it means>
   - Eases: T1 · Worsens: T2
   - Collides with: <constraint / number> [source]
   - Right if: <what you would have to believe>
-- **Option B — <name>:** …
+- **Option B — <concrete mechanism or service>:** …
+<!-- One or more per design area; a skipped area gets one line saying why. -->
+
+### Delivery
+#### D7 [PoC]: <question>
+- …
 
 ## Assumptions and open questions
-- A1: <assumption> — validate by <how>
+- A1: <premise the recommendation depends on> — if wrong: <what changes> — validate: <how, who>
 - O1: <question for the client> — owner <who>
 
 # Decisions

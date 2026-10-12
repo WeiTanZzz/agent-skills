@@ -92,10 +92,10 @@ lanes:
     nodes:
       - id: wf
         label: Reusable workflows
-        sub: build · test · SAST · evidence
+        sub: GitHub Actions · SAST · evidence
       - id: tf
         label: Terraform modules
-        sub: private registry · semver
+        sub: TFC private registry · semver
       - id: jenkins
         label: Jenkins estates
         sub: retired in waves
@@ -130,19 +130,96 @@ highlight: [wf, tf]
 retire: [jenkins]
 caption: Green is what we build; dashed red is what we retire.
 ```
-notes: Walk it top to bottom, following one merge. Point at the evidence store when you mention the audit finding from slide 3.
+notes: Backstage: an open-source developer portal with a service catalogue and templates. S3 object lock: write-once storage; nothing can change or delete an object until its retention ends. Walk it top to bottom, following one merge. Point at the evidence store when you mention the audit finding from slide 3.
 
-## tensions
-title: Each tension is resolved by a mechanism, not a compromise
+## flow
+title: One merge reaches production with evidence and no stored keys
+kicker: Request flow · merge to production
+answers: [Q2, Q4]
+body:
+- Every step runs inside the platform-owned workflow; the team's repo only pins `golden-path@v2`.
+> Security gets evidence on every change; teams get a release with no ticket and no stored keys.
+visual:
+```yaml
+type: sequence
+participants:
+  - id: dev
+    label: Developer
+  - id: gh
+    label: GitHub
+    sub: branch protection
+  - id: wf
+    label: Reusable workflow
+    sub: golden-path@v2
+  - id: sts
+    label: AWS STS
+    sub: OIDC trust
+  - id: ev
+    label: Evidence store
+    sub: S3 object lock
+  - id: prod
+    label: Production
+    sub: PCI account
+highlight: [wf, ev]
+steps:
+  - from: dev
+    to: gh
+    label: merge to main
+  - from: gh
+    to: wf
+    label: trigger
+  - from: wf
+    to: wf
+    label: build · test · SAST · SBOM
+  - from: wf
+    to: sts
+    label: OIDC token for this repo
+  - from: sts
+    to: wf
+    label: 1-hour deploy role
+    dashed: true
+  - from: wf
+    to: ev
+    label: approver, diff, scan results
+  - from: wf
+    to: prod
+    label: terraform apply · deploy
+  - from: wf
+    to: gh
+    label: status + evidence link
+    dashed: true
+caption: Controls fire at steps 1, 3, 4 and 6; none depends on a person remembering.
+```
+notes: OIDC federation: GitHub signs a short-lived token saying which repo and branch is running; AWS STS swaps it for temporary role credentials. SBOM: a list of every dependency in the build. Walk the numbers. Step 4 is the one engineers ask about — the role trusts only this repo and the main branch, so a fork cannot deploy. Step 6 writes evidence before deploy, so a failed write blocks the release.
+
+## security
+title: Every PCI control is enforced by the path, not by review
+kicker: Security model
+answers: [Q4]
+body:
+| Concern | Control | Implemented with | Evidence |
+|---|---|---|---|
+| Long-lived cloud keys | Short-lived, repo-scoped deploy roles | GitHub OIDC → IAM role, `sub` pinned to repo and branch | CloudTrail `AssumeRoleWithWebIdentity` |
+| Unreviewed change to prod | Two approvals before merge | Branch protection + CODEOWNERS | PR record in evidence store |
+| Vulnerable code or dependencies | Block on high findings | SAST and SCA steps in the workflow | Scan report per release |
+| Tampered evidence | Write-once storage | S3 object lock, compliance mode, 7 years | Bucket policy, lock config |
+| Teams bypassing the path | Only the path can deploy | SCP denies deploy roles not created by the platform | SCP in org config |
+> Compliance becomes a property of the path, so the audit samples the path, not 220 pipelines.
+visual: none
+notes: If the security architect pushes, the SCP row is the backstop — even a team that forks the workflow cannot assume a deploy role.
+
+## tradeoffs
+title: We trade pipeline freedom for speed and audit safety
 kicker: Trade-offs
 answers: [Q2]
 body:
-| Tension | Mechanism | Why it works | What we trade off |
-|---|---|---|---|
-| Security wants a gate; product wants to ship daily | Controls run inside the reusable workflow | Every change is checked, with no human queue | Teams lose freedom to customise the pipeline |
-| Central platform vs team autonomy | Versioned modules, two supported majors | Teams upgrade on their own schedule | Platform carries two versions at once |
-| Build new vs keep Jenkins | Retire Jenkins in waves behind the template | No big-bang cutover, no stalled teams | Both run side by side for ~6 months |
-> We trade pipeline freedom for speed and audit safety, and say so up front.
+| Decision | Chosen | Rejected | Why | Cost |
+|---|---|---|---|---|
+| Security gate vs daily shipping | Controls inside the reusable workflow | Manual change review | Every change checked, no human queue | Teams cannot customise the pipeline |
+| Central platform vs team autonomy | Semver, two supported majors | Single latest version | Teams upgrade on their own schedule | Platform maintains two versions |
+| Keep Jenkins or replace | GitHub Actions, retire Jenkins in waves | Standardise one Jenkins estate | Native OIDC and evidence; one upgrade path | Both run side by side ~6 months |
+| Runners | GitHub-hosted, self-hosted only for PCI | All self-hosted | Less to operate for a team of five | PCI runners still need patching |
+> We say up front what we give up, and what would make us change it.
 visual: none
 notes: Expect the challenge here. Defend the two-major window and offer the fallback from the Q&A prep.
 
@@ -180,13 +257,13 @@ title: Production readiness means running the path like a product
 kicker: Path to production
 answers: [Q4]
 body:
-| Area | What we add | Why |
+| Area | Mechanism | Why |
 |---|---|---|
-| Security | OIDC to AWS, no long-lived keys; signed artifacts | Closes the credential findings from the audit |
-| Resilience | Runners across two AZs; pinned workflow versions | A runner outage must not stop 35 teams |
-| Observability | DORA metrics per team from workflow events | Proves the outcome, not just adoption |
-| Governance | Semver, changelog, two supported majors | Upgrades without breaking teams |
-| Operability | Platform on call for the path, not team services | Fits a team of five |
+| Security | Signed artifacts (Sigstore); deploy only signed images | Closes the supply-chain gap left after the PoC |
+| Resilience | PCI runners as an ASG across two AZs; workflows pinned by tag | A runner outage must not stop 35 teams |
+| Observability | Workflow events → DORA metrics per team in CloudWatch | Proves the outcome, not just adoption |
+| Governance | Semver, changelog, two supported majors, Renovate upgrade PRs | Upgrades without breaking teams |
+| Operability | Platform on call for the path only; runbooks per failure mode | Fits a team of five |
 > The platform team supports one path, not 220 pipelines.
 visual: none
 notes: Two minutes. If pressed on cost, runners are the only new spend; everything else reuses what they already license.
@@ -196,9 +273,10 @@ title: Three waves move all 35 teams in nine months
 kicker: Roadmap
 answers: [Q5]
 body:
-- **Team:** 2 platform engineers, 1 consultant lead, security one day a week.
+- **Team:** 2 platform engineers, 1 lead, security weekly.
 - **We need:** auditor time in week 6; a named pilot team.
-- **Top risk:** teams resist moving → volunteers first; freeze new Jenkins pipelines.
+- **Top risk:** teams resist moving → volunteers first.
+- **Rests on:** auditor accepts automated evidence (A1); two engineers ring-fenced (A3).
 > Two decisions this week: the pilot team and the auditor slot.
 visual:
 ```yaml
@@ -208,39 +286,47 @@ phases:
   - name: PoC
     start: 1
     end: 2
-    outcome: One team on the golden path
+    outcome: Pilot team live on the path · owner platform lead
   - name: Wave 1 · volunteers
     start: 3
     end: 4
-    outcome: 10 teams; Jenkins frozen for new pipelines
+    outcome: 10 teams; Jenkins frozen · owner platform lead
   - name: Wave 2 · high-change teams
     start: 5
     end: 7
-    outcome: 25 teams migrated
+    outcome: 25 teams; DORA report monthly · owner eng managers
   - name: Wave 3 · the rest
     start: 7
     end: 9
-    outcome: Jenkins switched off
+    outcome: Jenkins switched off · owner Head of Platform
 ```
 notes: Close on the two decisions, then stop and invite questions.
 
 # Q&A prep
-- Q: Why not standardise Jenkins instead of replacing it?
+- Q: [Tech] What stops a fork or a feature branch from deploying to production?
+  A: The deploy role's trust policy pins the OIDC `sub` to the repo and `refs/heads/main`, and an SCP denies any other deploy role. A fork gets no token that the role accepts.
+- Q: [Tech] What happens to 35 teams when you ship a breaking change to the workflow?
+  A: Nothing until they move: they pin `@v2`, breaking changes go to `@v3`, and v2 keeps security fixes for six months. If two majors prove too heavy, one major plus Renovate upgrade PRs.
+- Q: [Tech] The evidence write fails mid-release. Then what?
+  A: The deploy step depends on it, so the release stops and the team retries. Blocking a release is cheaper than an unevidenced change in PCI scope.
+- Q: [Tech] How do you stop teams forking the workflow?
+  A: Forks lose evidence capture and cannot assume the deploy role. We would rather make the paved road better than police forks.
+- Q: [Tech] Why GitHub-hosted runners in a PCI estate?
+  A: Only non-PCI builds use them; PCI deploys run on self-hosted runners inside the PCI account. If the QSA objects, everything moves self-hosted at the cost of patching.
+- Q: [Biz] Why not standardise Jenkins instead of replacing it?
   A: Fair, it is cheaper short term. But four estates means four upgrade paths, and evidence capture is native in workflows. If the auditor accepted Jenkins evidence as-is, I would reconsider.
-- Q: Two supported majors doubles the platform's work. Can five people do it?
+- Q: [Biz] Two supported majors doubles the platform's work. Can five people do it?
   A: It adds load, but bounded to the path, and it is what stops upgrades breaking teams. If adoption lags, we drop to one major plus an automated upgrade PR.
-- Q: How do you stop teams forking the workflow?
-  A: Forks lose evidence capture, so they fail the change check. We would rather make the paved road better than police forks.
-- Q: What if the auditor rejects automated evidence in week 6?
+- Q: [Biz] What if the auditor rejects automated evidence in week 6?
   A: That is why it is the go/no-go. We would add a lightweight human sign-off step to the workflow and re-test, rather than scale an unproven path.
-- Q: Why Backstage? It is heavy to run.
+- Q: [Biz] Why Backstage? It is heavy to run.
   A: They already run it for 60% of teams [§3]; we only add a template. If it were not there, a CLI scaffold would do for the PoC.
-- Q: Nine months feels slow.
-  A: The constraint is team migration capacity, not the platform. Wave 1 volunteers will tell us if waves 2 and 3 can be compressed.
+- Q: [Biz] Nine months feels slow.
+  A: The constraint is team migration capacity, not the platform. Wave 1 volunteers will tell us if waves 2 and 3 can be compressed. (your story)
 
 # Assumptions and open questions
-- A1: The auditor accepts machine-generated change evidence — validate in week 6.
-- A2: GitHub Actions is licensed for all teams — confirm with procurement.
-- A3: Two platform engineers can be ring-fenced for 9 months — confirm with Head of Platform.
+- A1: The auditor accepts machine-generated change evidence — if wrong: add a human sign-off step to the workflow — validate: auditor review in week 6.
+- A2: GitHub Actions is licensed for all teams — if wrong: licence cost enters the business case — validate: procurement, week 1.
+- A3: Two platform engineers can be ring-fenced for 9 months — if wrong: waves 2 and 3 slip by a quarter — validate: Head of Platform, before kick-off.
 - O1: Which team volunteers as the pilot? — owner: Head of Engineering
 - O2: Is multi-region in scope for year one? — owner: CTO

@@ -51,11 +51,13 @@ visual: none
 notes: …
 
 # Q&A prep
-- Q: <likely challenge>
-  A: <acknowledge → reason → what would change the decision, ≤ 2 lines>
+- Q: [Tech] <likely technical drill-down>
+  A: <acknowledge → reason or mechanism → what would change the decision, ≤ 2 lines>
+- Q: [Biz] <likely stakeholder, cost or delivery challenge>
+  A: <…>
 
 # Assumptions and open questions
-- A1: <assumption> — validate by <how>
+- A1: <premise the recommendation depends on> — if wrong: <what changes> — validate: <how, who>
 - O1: <open question> — owner <who>
 ````
 
@@ -67,22 +69,27 @@ does not count towards the 40-word body limit.
 
 ## Slides
 
-Exactly seven, in this order, with these ids. Every slide has all six fields. `answers` lists the
+Exactly nine, in this order, with these ids. Every slide has all six fields. `answers` lists the
 `Qn` the slide covers (may be `[]`). `visual` is one or more fenced `yaml` blocks, or `none`.
+Slides 3–6 carry the technical depth; slides 1–2 and 6–9 carry the client and commercial case.
 
 | # | id | Purpose | body | visual | Talk time |
 |---|---|---|---|---|---|
-| 1 | `answer` | Problem and the user's answer on one page | `Problem:` and `Recommendation:` bullets | `pillars` | 2 min |
-| 2 | `context` | What we found: situation, tensions, the numbers that matter | ≤ 3 situation bullets, tensions one line each | `metrics` and/or `chart` | 3 min |
-| 3 | `solution` | The whole solution at once | 3–5 callouts tying components to pillars | `diagram` | 5 min |
-| 4 | `tensions` | Each tension → the mechanism chosen | Table: Tension · Mechanism · Why it works · What we trade off | `none` | 4 min |
-| 5 | `poc` | What the PoC builds, what it proves | In scope, out of scope, use case, measurable success criteria | `diagram` (PoC subset highlighted) or `timeline` | 3 min |
-| 6 | `production` | PoC → production | Table: Area · What we add · Why | `none` | 3 min |
-| 7 | `delivery` | Roadmap, client asks, risks, decisions needed | Team, client asks, top 3 risks → mitigation | `timeline` | 3 min |
+| 1 | `answer` | Problem and the user's answer on one page | `Problem:` and `Recommendation:` bullets | `pillars` | 1.5 min |
+| 2 | `context` | What we found: situation, tensions, the numbers that matter | ≤ 3 situation bullets, tensions one line each | `metrics` and/or `chart` | 2 min |
+| 3 | `solution` | Component architecture | 3–5 callouts, each naming a component and its service | `diagram`: services named in `sub`, lanes on real boundaries | 4 min |
+| 4 | `flow` | The riskiest request, end to end | One line of context, or none | `sequence`, controls named on the steps where they fire | 3 min |
+| 5 | `security` | Security and data model | Table: Concern · Control · Implemented with · Evidence | `none` | 2.5 min |
+| 6 | `tradeoffs` | Tensions and contestable design decisions | Table: Decision · Chosen · Rejected · Why · Cost. Every tension plus the 2–3 choices most likely to be challenged | `none` | 2.5 min |
+| 7 | `poc` | What the PoC builds, what it proves | In scope, out of scope, use case, measurable success criteria | `diagram` (PoC subset highlighted) or `timeline` | 2 min |
+| 8 | `production` | PoC → production | Table: Area · Mechanism · Why; the mechanism names the service or config | `none` | 1.5 min |
+| 9 | `delivery` | Roadmap, client asks, risks, decisions needed | Team, client asks, top risks → mitigation, the 2–3 assumptions the plan rests on | `timeline`: each phase's `outcome` is a deliverable with an owner | 1.5 min |
 
-`answer` renders as a statement page; `tensions` and `production` render full width; the rest
-render as text on the left and visuals on the right. The renderer adds a cover slide in front and
-an assumptions slide at the end.
+On slides 3–8 the `> ` callout names the outcome or stakeholder the slide serves.
+
+`answer` renders as a statement page; `flow`, `security`, `tradeoffs` and `production` render
+full width; the rest render as text on the left and visuals on the right. The renderer adds a
+cover slide in front and an assumptions slide at the end.
 
 ## Visual types
 
@@ -137,6 +144,30 @@ edges:            # connect nodes in the same or adjacent lanes; longer jumps cr
     dashed: false # optional: async or planned flows
 highlight: [gw]   # accented: new components, or the PoC subset on slide 5
 retire: []        # drawn dashed red: things being replaced
+caption: <one line under the diagram>
+```
+
+### sequence
+```yaml
+type: sequence
+participants:     # left to right; 3–6
+  - id: dev
+    label: Developer
+  - id: gha
+    label: GitHub Actions
+    sub: reusable workflow
+highlight: [gha]  # optional: accented participants
+steps:            # top to bottom, numbered automatically; ≤ 9
+  - from: dev
+    to: gha
+    label: merge to main
+  - from: gha
+    to: gha        # same participant: drawn as a self-call
+    label: SAST + SBOM
+  - from: gha
+    to: dev
+    label: status
+    dashed: true   # optional: responses or async
 caption: <one line under the diagram>
 ```
 

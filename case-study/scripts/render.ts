@@ -7,9 +7,9 @@ type Visual = { type: string; [key: string]: any }
 type Slide = { id: string; title: string; kicker: string; answers: string[]; body: string; visuals: Visual[]; notes: string }
 type Box = { id: string; lane: number; x: number; y: number; w: number; h: number; label: string[]; sub: string[] }
 
-const SLIDE_IDS = ["answer", "context", "solution", "tensions", "poc", "production", "delivery"]
+const SLIDE_IDS = ["answer", "context", "solution", "flow", "security", "tradeoffs", "poc", "production", "delivery"]
 const FIELDS = ["title", "kicker", "answers", "body", "visual", "notes"]
-const FULL_WIDTH = new Set(["tensions", "production"])
+const FULL_WIDTH = new Set(["flow", "security", "tradeoffs", "production"])
 const SERIES = ["var(--accent)", "var(--ui)", "var(--frozen)", "var(--danger)"]
 
 const warnings: string[] = []
@@ -400,6 +400,48 @@ const diagram = (v: Visual) => {
     return figure(`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Architecture diagram">${laneSvg}${paths}${nodeSvg}${laneTitles}${labels}</svg>`, undefined, v.caption)
 }
 
+const sequence = (v: Visual) => {
+    const parts: any[] = v.participants ?? []
+    const steps: any[] = v.steps ?? []
+    if (parts.length < 2 || parts.length > 6) warn(`sequence: ${parts.length} participants (aim 3–6)`)
+    if (steps.length > 9) warn(`sequence: ${steps.length} steps (max 9)`)
+    const W = 1160, PAD = 12, HEAD = 58, ROW = 36
+    const highlight = new Set<string>(v.highlight ?? [])
+    const colW = (W - PAD * 2) / Math.max(parts.length, 1)
+    const boxW = Math.min(180, colW - 18)
+    const col = new Map<string, number>(parts.map((p, i) => [p.id, PAD + colW * (i + 0.5)]))
+    const T = HEAD + 30
+    const H = T + steps.length * ROW
+    let svg = parts
+        .map(p => {
+            const x = col.get(p.id) as number
+            const label = wrap(String(p.label ?? p.id), Math.floor((boxW - 12) / 8), 1, `sequence participant ${p.id}`)[0]
+            const sub = p.sub ? wrap(String(p.sub), Math.floor((boxW - 12) / 6.6), 1, `sequence participant ${p.id}`)[0] : ""
+            return `<line class="life" x1="${x}" x2="${x}" y1="${HEAD}" y2="${H}"/><rect class="${highlight.has(p.id) ? "acc" : "b"}" x="${x - boxW / 2}" y="4" width="${boxW}" height="${HEAD - 8}" rx="9"/><text class="t c" x="${x}" y="${sub ? 26 : 35}">${esc(label)}</text>${sub ? `<text class="s c" x="${x}" y="${43}">${esc(sub)}</text>` : ""}`
+        })
+        .join("")
+    steps.forEach((st, k) => {
+        const x1 = col.get(st.from), x2 = col.get(st.to)
+        if (x1 === undefined || x2 === undefined) {
+            warn(`sequence step ${k + 1} ${st.from} → ${st.to}: unknown participant`)
+            return
+        }
+        const y = T + k * ROW
+        const cls = st.dashed ? "ard" : "ar"
+        const text = `${k + 1}  ${st.label ?? ""}`
+        if (x1 === x2) {
+            svg += `<path class="${cls}" d="M${x1} ${y - 8} H${x1 + 26} V${y + 6} H${x1 + 3}"/><rect class="lbg" x="${x1 + 30}" y="${y - 10}" width="${text.length * 6.6 + 8}" height="16" rx="4"/><text class="st" x="${x1 + 34}" y="${y + 2}">${esc(text)}</text>`
+        } else {
+            const right = x1 < x2
+            const w = text.length * 6.6 + 10
+            const mx = (x1 + x2) / 2
+            if (w > Math.abs(x2 - x1)) warn(`sequence step ${k + 1}: label is wider than its arrow`)
+            svg += `<path class="${cls}" d="M${x1} ${y} H${right ? x2 - 2 : x2 + 2}"/><rect class="lbg" x="${mx - w / 2}" y="${y - 17}" width="${w}" height="15" rx="4"/><text class="st c" x="${mx}" y="${y - 6}">${esc(text)}</text>`
+        }
+    })
+    return figure(`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sequence diagram">${svg}</svg>`, undefined, v.caption)
+}
+
 const timeline = (v: Visual) => {
     const phases: any[] = v.phases ?? []
     const unit = v.unit === "month" ? "M" : "W"
@@ -434,6 +476,8 @@ const visual = (v: Visual) => {
             return chart(v)
         case "diagram":
             return diagram(v)
+        case "sequence":
+            return sequence(v)
         case "timeline":
             return timeline(v)
         default:
@@ -584,6 +628,8 @@ svg .old{fill:var(--box);stroke:var(--danger);stroke-width:1.3;stroke-dasharray:
 svg .ar{fill:none;stroke:var(--ink-2);stroke-width:1.4;marker-end:url(#ah)}
 svg .ard{fill:none;stroke:var(--ink-2);stroke-width:1.3;stroke-dasharray:5 4;marker-end:url(#ah)}
 svg .sl{fill:none;stroke-width:2.5}
+svg .st{font-size:12.5px;fill:var(--ink-2);font-weight:500}
+svg .life{stroke:var(--line);stroke-width:1.5;stroke-dasharray:4 4}
 `
 
 const html = `<!doctype html>
