@@ -300,5 +300,6 @@ Each issue is `{ rule, message }`; the message names the element and the slide i
 3. Set a viewer password and a presenter password (required for a new deck, at least 6 characters). Viewers sign in
    with the first; you present with the second.
 
-Uploading to an existing slug replaces the live deck: the previous version is archived for rollback, and every open
-copy, the presenter's included, reloads.
+Uploading to an existing slug replaces the live deck: the previous version is archived (the last 10 are kept) and
+every open copy, the presenter's included, reloads. Rolling back restores any archived version and archives the one it
+replaces, so a rollback can be undone.
